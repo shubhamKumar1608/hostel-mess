@@ -19,9 +19,9 @@ function authMiddleware(req, res, next) {
     // Verify token using secret
     const decoded = jwt.verify(token, process.env.JWT_SECRET);
 
-    // Attach user ID from token payload to request object
-    req.user = { userId: decoded.userId };
-    req.userId = decoded.userId;
+    // Attach user data from token payload to request object
+    req.user = { id: decoded.id, role: decoded.role };
+    req.userId = decoded.id;
 
     // Proceed to next middleware or route handler
     next();

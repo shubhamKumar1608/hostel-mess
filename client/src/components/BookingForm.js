@@ -4,10 +4,16 @@ import API from '../api';
 
 const mealTypes = ['breakfast', 'lunch', 'snacks', 'dinner'];
 
-const BookingForm = ({ menu }) => {
+const BookingForm = () => {
   const [selectedDate, setSelectedDate] = useState('');
-  const [selectedMeals, setSelectedMeals] = useState({});
+  const [selectedMeals, setSelectedMeals] = useState({
+    breakfast: false,
+    lunch: false,
+    snacks: false,
+    dinner: false
+  });
   const [menuForDay, setMenuForDay] = useState(null);
+  const [loading, setLoading] = useState(false);
 
   // Allow booking for up to 7 days from today
   const today = new Date();
@@ -18,14 +24,26 @@ const BookingForm = ({ menu }) => {
   });
 
   useEffect(() => {
-    if (selectedDate && menu) {
-      const found = menu.find(m => m.date === selectedDate);
-      setMenuForDay(found || null);
-    } else {
-      setMenuForDay(null);
-    }
-    setSelectedMeals({});
-  }, [selectedDate, menu]);
+    const fetchMenuForDate = async () => {
+      if (!selectedDate) {
+        setMenuForDay(null);
+        return;
+      }
+      
+      try {
+        setLoading(true);
+        const response = await API.get(`/menu/${selectedDate}`);
+        setMenuForDay(response.data);
+      } catch (err) {
+        console.error('Failed to fetch menu:', err);
+        setMenuForDay(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMenuForDate();
+  }, [selectedDate]);
 
   const handleMealChange = (meal) => {
     setSelectedMeals(prev => ({
@@ -36,69 +54,94 @@ const BookingForm = ({ menu }) => {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!selectedDate || Object.keys(selectedMeals).length === 0) {
+    if (!selectedDate || !Object.values(selectedMeals).some(Boolean)) {
       alert('Please select a date and at least one meal.');
       return;
     }
+    
     try {
+      setLoading(true);
       await API.post('/bookings', {
         date: selectedDate,
-        meals: selectedMeals
-      }, {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+        meals: selectedMeals,
+        messType: 'main' // default mess type
       });
-      alert('Booking created!');
+      
+      alert('Booking created successfully!');
       setSelectedDate('');
-      setSelectedMeals({});
+      setSelectedMeals({
+        breakfast: false,
+        lunch: false,
+        snacks: false,
+        dinner: false
+      });
     } catch (err) {
+      console.error('Booking error:', err);
       alert(err?.response?.data?.message || 'Failed to create booking');
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} style={{ maxWidth: 400, margin: '0 auto' }}>
-      <label>
-        Select Date:
-        <select
-          value={selectedDate}
-          onChange={e => setSelectedDate(e.target.value)}
-          required
-        >
-          <option value="">--Select Date--</option>
-          {weekDates.map(date => (
-            <option key={date} value={date}>{date}</option>
-          ))}
-        </select>
-      </label>
+    <form onSubmit={handleSubmit} className="booking-form">
+      <div className="form-group">
+        <label>
+          Select Date:
+          <select
+            value={selectedDate}
+            onChange={e => setSelectedDate(e.target.value)}
+            required
+            disabled={loading}
+          >
+            <option value="">--Select Date--</option>
+            {weekDates.map(date => (
+              <option key={date} value={date}>
+                {new Date(date).toLocaleDateString('en-US', {
+                  weekday: 'short',
+                  month: 'short',
+                  day: 'numeric'
+                })}
+              </option>
+            ))}
+          </select>
+        </label>
+      </div>
+
+      {loading && (
+        <div className="loading">Loading...</div>
+      )}
 
       {selectedDate && menuForDay && (
-        <div style={{ margin: '1em 0', background: '#f7f7f7', padding: '1em', borderRadius: 8 }}>
-          <strong>Menu for {selectedDate}:</strong>
-          <ul>
+        <div className="menu-card">
+          <h3>Menu for {new Date(selectedDate).toLocaleDateString()}</h3>
+          <div className="menu-grid">
             {mealTypes.map(meal => (
-              <li key={meal}>
-                <strong>{meal.charAt(0).toUpperCase() + meal.slice(1)}:</strong> {menuForDay[meal]?.join(', ') || 'Not available'}
-              </li>
+              <div key={meal} className="menu-item">
+                <h4>{meal.charAt(0).toUpperCase() + meal.slice(1)}</h4>
+                <p>{menuForDay[meal]?.join(', ') || 'Not available'}</p>
+                <label className="meal-checkbox">
+                  <input
+                    type="checkbox"
+                    checked={selectedMeals[meal]}
+                    onChange={() => handleMealChange(meal)}
+                    disabled={loading}
+                  />
+                  Book this meal
+                </label>
+              </div>
             ))}
-          </ul>
+          </div>
         </div>
       )}
 
-      <div>
-        <strong>Select Meals:</strong>
-        {mealTypes.map(meal => (
-          <label key={meal} style={{ display: 'block', margin: '0.5em 0' }}>
-            <input
-              type="checkbox"
-              checked={!!selectedMeals[meal]}
-              onChange={() => handleMealChange(meal)}
-            />
-            {meal.charAt(0).toUpperCase() + meal.slice(1)}
-          </label>
-        ))}
-      </div>
-
-      <button type="submit" style={{ marginTop: '1em' }}>Book Meal(s)</button>
+      <button 
+        type="submit" 
+        className="submit-button"
+        disabled={loading || !selectedDate || !Object.values(selectedMeals).some(Boolean)}
+      >
+        {loading ? 'Booking...' : 'Book Selected Meals'}
+      </button>
     </form>
   );
 };
