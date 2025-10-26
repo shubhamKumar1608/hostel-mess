@@ -1,0 +1,13 @@
+{
+  "name": "hostel-mess-backend",
+  "description": "Backend API for Hostel Mess Booking System",
+  "repository": "https://github.com/yourusername/hostel-mess-booking-system",
+  "keywords": ["node", "express", "api"],
+  "env": {
+    "PORT": {
+      "description": "Port to run the server on",
+      "value": "5000"
+    }
+  }
+}
+

@@ -28,7 +28,8 @@ const AdminLogin = ({ setIsLoggedIn }) => {
 
     if (formData.email === ADMIN_CREDENTIALS.email && formData.password === ADMIN_CREDENTIALS.password) {
       localStorage.setItem('userRole', 'admin');
-      localStorage.setItem('token', 'admin-token');
+      localStorage.setItem('token', 'token-1');
+      localStorage.setItem('userId', '1');
       setIsLoggedIn(true);
       navigate('/admin');
     } else {

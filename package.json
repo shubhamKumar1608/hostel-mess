@@ -1,0 +1,16 @@
+{
+  "name": "hostel-mess-booking-system",
+  "version": "1.0.0",
+  "description": "Hostel Mess Booking System",
+  "scripts": {
+    "start:server": "cd server && node server.js",
+    "start:client": "cd client && npm start",
+    "dev": "concurrently \"npm run start:server\" \"npm run start:client\"",
+    "server": "cd server && npm start",
+    "client": "cd client && npm start"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}
+

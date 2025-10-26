@@ -1,0 +1,55 @@
+# Quick Deploy Commands
+
+## 1. First, push to GitHub (if not already)
+git init
+git add .
+git commit -m "Initial commit - Hostel Mess Booking System"
+git branch -M main
+git remote add origin https://github.com/YOUR-USERNAME/YOUR-REPO.git
+git push -u origin main
+
+## 2. Deploy Backend to Railway
+
+# Go to https://railway.app
+# Sign up with GitHub
+# Click "New Project" → "Deploy from GitHub repo"
+# Select your repository
+# Add service → Empty service
+# Set start command: node server.js
+# Copy the URL (e.g., https://your-app.railway.app)
+
+## 3. Deploy Frontend to Vercel
+
+# Option A: Using Web Dashboard
+# 1. Go to https://vercel.com
+# 2. Import your GitHub repo
+# 3. Configure:
+#    - Framework: Create React App
+#    - Root Directory: client
+#    - Build Command: npm run build
+#    - Output Directory: build
+#    - Environment: REACT_APP_API_URL = https://your-app.railway.app/api
+# 4. Deploy!
+
+# Option B: Using CLI
+npm i -g vercel
+cd client
+vercel
+# Follow the prompts
+
+## 4. Update CORS (if needed)
+
+# In server/server.js, update:
+app.use(cors({
+  origin: 'https://your-app.vercel.app',  // Your Vercel URL
+  credentials: true
+}));
+
+# Redeploy backend after this change
+
+## 5. Test!
+
+# Visit your Vercel URL
+# Try logging in as admin or student
+# Everything should work!
+

@@ -33,7 +33,8 @@ const StudentLogin = ({ setIsLoggedIn }) => {
 
     if (student) {
       localStorage.setItem('userRole', 'student');
-      localStorage.setItem('token', 'student-token');
+      localStorage.setItem('token', 'token-2');
+      localStorage.setItem('userId', '2');
       localStorage.setItem('userEmail', formData.email);
       setIsLoggedIn(true);
       navigate('/dashboard');

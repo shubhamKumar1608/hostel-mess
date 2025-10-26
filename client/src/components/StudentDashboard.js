@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import menuService from '../services/menuService';
+import bookingService from '../services/bookingService';
 
 const StudentDashboard = () => {
   const navigate = useNavigate();
@@ -20,10 +22,8 @@ const StudentDashboard = () => {
     const fetchData = async () => {
       try {
         setIsLoading(true);
-        const [menuResponse, bookingsResponse] = await Promise.all([
-          menuService.getTodayMenu(),
-          bookingService.getMyBookings()
-        ]);
+        const menuResponse = await menuService.getMenu();
+        const bookingsResponse = await bookingService.getMyBookings();
         
         setMenuItems(menuResponse.data);
         setBookings(bookingsResponse.data);
@@ -39,14 +39,15 @@ const StudentDashboard = () => {
   }, [navigate]);
 
   const handleBookMeal = async (item) => {
-    if (isBooked(item._id)) {
+    if (isBooked(item.id)) {
       setError('You have already booked this meal!');
       setTimeout(() => setError(''), 3000);
       return;
     }
 
     try {
-      const response = await bookingService.createBooking(item._id);
+      const meals = { [item.type]: true };
+      const response = await bookingService.createBooking(item.date, meals);
       setBookings(prev => [...prev, response.data]);
       setSuccess('Meal booked successfully!');
       setTimeout(() => setSuccess(''), 3000);
@@ -57,7 +58,7 @@ const StudentDashboard = () => {
   };
 
   const isBooked = (menuId) => {
-    return bookings.some(booking => booking.menu._id === menuId && booking.status === 'confirmed');
+    return bookings.some(booking => booking.menuItem?.id === menuId && booking.status === 'confirmed');
   };
 
   return (

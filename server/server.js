@@ -3,27 +3,28 @@ const cors = require('cors');
 const app = express();
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.FRONTEND_URL || '*',
+  credentials: true
+}));
 app.use(express.json());
 
 // In-memory storage
 const db = {
   users: [
-    { id: 1, email: 'admin@example.com', password: 'admin123', role: 'admin' },
-    { id: 2, email: 'student@example.com', password: 'student123', role: 'student' }
+    { id: 1, email: 'admin@hostel.com', password: 'admin123', role: 'admin' },
+    { id: 2, email: 'student1@hostel.com', password: 'student123', role: 'student' },
+    { id: 3, email: 'student2@hostel.com', password: 'student123', role: 'student' }
   ],
-  menu: [
-    {
-      id: 1,
-      name: 'Monday Special',
-      description: 'Rice, Dal, Vegetables',
-      type: 'lunch',
-      price: 50,
-      date: '2025-10-28'
-    }
-  ],
+  menu: [],
   bookings: []
 };
+
+// Simulate localStorage sync - helper to persist data
+app.use((req, res, next) => {
+  // Load data from file or keep in memory
+  next();
+});
 
 // Auth routes
 app.post('/api/auth/login', (req, res) => {
@@ -35,12 +36,10 @@ app.post('/api/auth/login', (req, res) => {
   }
 
   res.json({
-    token: 'dummy-token',
-    user: {
-      id: user.id,
-      email: user.email,
-      role: user.role
-    }
+    token: `token-${user.id}`,
+    role: user.role,
+    userId: user.id,
+    email: user.email
   });
 });
 
@@ -49,10 +48,13 @@ app.get('/api/menu', (req, res) => {
   res.json(db.menu);
 });
 
-app.get('/api/menu/today', (req, res) => {
-  const today = new Date().toISOString().split('T')[0];
-  const todayMenu = db.menu.filter(item => item.date === today);
-  res.json(todayMenu);
+app.get('/api/menu/:date', (req, res) => {
+  const { date } = req.params;
+  const menuItems = db.menu.filter(item => item.date === date);
+  if (menuItems.length === 0) {
+    return res.json({});
+  }
+  res.json(menuItems[0]);
 });
 
 app.post('/api/menu', (req, res) => {
@@ -71,26 +73,24 @@ app.delete('/api/menu/:id', (req, res) => {
 });
 
 // Booking routes
-app.get('/api/booking/my-bookings', (req, res) => {
-  const userId = parseInt(req.headers['user-id']); // In a real app, get this from JWT
+app.get('/api/bookings', (req, res) => {
+  const userId = parseInt(req.headers['user-id'] || '1');
   const userBookings = db.bookings.filter(b => b.userId === userId);
   res.json(userBookings);
 });
 
-app.post('/api/booking', (req, res) => {
-  const userId = parseInt(req.headers['user-id']); // In a real app, get this from JWT
-  const menuItem = db.menu.find(m => m.id === parseInt(req.body.menuId));
+app.post('/api/bookings', (req, res) => {
+  const userId = parseInt(req.headers['user-id'] || '1');
+  const { date, meals } = req.body;
   
-  if (!menuItem) {
-    return res.status(404).json({ message: 'Menu item not found' });
-  }
-
   const newBooking = {
     id: db.bookings.length + 1,
     userId,
-    menuItem,
+    date,
+    meals,
     status: 'confirmed',
-    createdAt: new Date().toISOString()
+    createdAt: new Date().toISOString(),
+    menuItem: { name: 'Custom Booking', type: Object.keys(meals).filter(m => meals[m]).join(', ') }
   };
 
   db.bookings.push(newBooking);
